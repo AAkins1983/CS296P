@@ -1,0 +1,149 @@
+1. 	get the first 4 attributes from the charter table sorted by date.
+	
+	select AC_NUMBER, CHAR_DATE, CHAR_DESTINATION, CHAR_DISTANCE
+	from charter
+	order by CHAR_DATE
+
+2. 	get the date, aircraft number, destination, distance and hours 
+	for each charter sorted by aircraft number and date.
+	
+	select CHAR_DATE, AC_NUMBER, CHAR_DESTINATION, CHAR_DISTANCE, CHAR_HOURS_FLOWN
+	from charter
+	order by AC_NUMBER, CHAR_DATE
+	
+3. 	get the date, aircraft number, destination, distance and hours 
+	for each charter flown by aircraft number 2778V. Sort by date.
+
+	select CHAR_DATE, AC_NUMBER, CHAR_DESTINATION, CHAR_DISTANCE, CHAR_HOURS_FLOWN
+	from charter
+	where AC_NUMBER = '2778V'
+	order by CHAR_DATE
+	
+4. 	get the date, aircraft number, destination, distance, 
+	hours, customer name, customer phone (including area code) 
+	for each charter flown by aircraft number 2778V. Sort by customer name.
+	
+	select CHAR_DATE, AC_NUMBER, CHAR_DESTINATION, CHAR_DISTANCE, CHAR_HOURS_FLOWN, CUS_FNAME, CUS_LNAME, CUS_AREACODE, CUS_PHONE
+	from charter
+		inner join customer
+			on charter.CUS_CODE = customer.CUS_CODE
+	where AC_NUMBER = '2778V'
+	order by CUS_LNAME
+	
+5. 	get all of the information from the pilot table as well as all of the 
+	information from the employee table for each employee who is a pilot. 
+	Sort by pilot name. (EMP_NUM X2)
+
+	select * from pilot
+		inner join employee
+			on pilot.EMP_NUM = employee.EMP_NUM
+	order by EMP_LNAME
+		
+6. 	add the earned rating information to query 5. (EMP_NUM X3)
+
+	select * from pilot
+		inner join employee
+			on pilot.EMP_NUM = employee.EMP_NUM
+		inner join earnedrating
+			on pilot.EMP_NUM = earnedrating.EMP_NUM		
+	order by EMP_LNAME
+	
+7. 	add the rating name information to query 6. (EMP_NUM X3, RTG_CODE X2)
+
+	select * from pilot
+		inner join employee
+			on pilot.EMP_NUM = employee.EMP_NUM
+		inner join earnedrating
+			on pilot.EMP_NUM = earnedrating.EMP_NUM
+		inner join rating
+			on earnedrating.RTG_CODE = rating.RTG_CODE	
+	order by EMP_LNAME
+	
+8. 	add the pilot's full name to query 3.
+
+	select CHAR_DATE, AC_NUMBER, CHAR_DESTINATION, CHAR_DISTANCE, CHAR_HOURS_FLOWN, EMP_FNAME, EMP_LNAME
+	from charter
+		inner join crew
+			on charter.char_trip = crew.char_trip
+		inner join employee
+			on crew.emp_num = employee.emp_num
+		inner join pilot
+			on employee.emp_num = pilot.emp_num	
+	where AC_NUMBER = '2778V'
+	order by CHAR_DATE
+
+9. 	add the aircraft model and charge per mile to query 2.
+	Limit the output to charters on Feb 6, 2016.
+
+	select CHAR_DATE, charter.AC_NUMBER, CHAR_DESTINATION, CHAR_DISTANCE, CHAR_HOURS_FLOWN, MOD_NAME, MOD_CHG_MILE
+	from charter
+		inner join aircraft
+			on charter.ac_number = aircraft.ac_number
+		inner join model
+			on aircraft.mod_code = model.mod_code
+	where char_date = '2016-02-06'
+	order by AC_NUMBER, CHAR_DATE
+		
+10.	add a computed column for fuel per hour to query 9. (Is this correct?)
+
+	select (CHAR_FUEL_GALLONS/CHAR_HOURS_FLOWN), CHAR_DATE, charter.AC_NUMBER, CHAR_DESTINATION, CHAR_DISTANCE, CHAR_HOURS_FLOWN, MOD_NAME, MOD_CHG_MILE
+	from charter
+		inner join aircraft
+			on charter.ac_number = aircraft.ac_number
+		inner join model
+			on aircraft.mod_code = model.mod_code
+	where char_date = '2016-02-06'
+	order by AC_NUMBER, CHAR_DATE
+	
+11.	get the charter date, customer name, distance, 
+	charge per mile and the total mileage charge for charters 
+	after Feb 9, 2016. Sort by the date and the customer name. (total mileage?)
+	
+	select CHAR_DATE, CUS_FNAME, CUS_LNAME, CHAR_DISTANCE, MOD_CHG_MILE, (CHAR_DISTANCE * MOD_CHG_MILE)
+	from charter
+		inner join customer
+			on charter.CUS_CODE = customer.CUS_CODE
+		inner join aircraft
+			on aircraft.ac_number = charter.ac_number
+		inner join model
+			on model.mod_code = aircraft.mod_code
+	where CHAR_DATE > '2016-02-09'
+	order by char_date, cus_lname
+	
+12.	get the customer name and balance for customers who have an unpaid balance. 
+	List the highest unpaid balance first.
+
+	select CUS_FNAME, CUS_LNAME, CUS_BALANCE
+	from customer
+	where CUS_BALANCE > 0
+	order by CUS_BALANCE DESC
+	
+13.	get the average unpaid balance, minimum unpaid balance, 
+	maximum unpaid balance and total unpaid balances.
+
+	select avg(cus_balance),
+		min(cus_balance),
+		max(cus_balance),
+		count(cus_balance)
+	from customer
+	where cus_balance > 0
+	
+14. 	get the aircraft number and total trips for each aircraft.
+
+	select ac_number, count(*)
+	from charter
+	group by ac_number
+	
+15.	add the total distance flown, average distance, total hours 
+	and average hours to query 14.
+
+	select ac_number as "Aircraft Number", count(*) as Count, sum(char_distance) as "Total Distance", avg(char_distance) as "Avg. Distance", sum(char_hours_flown) as "Hours Flown", avg(char_hours_flown) as "Avg. Hours Flown"
+	from charter
+	group by ac_number
+	
+16.	get the employee number, name, date of birth, 
+	today's date and the employee's age as of today. Sort by oldest employee.
+	
+	select emp_num, emp_lname, emp_fname, emp_dob, 
+	curdate(), floor(datediff(curdate(), emp_dob) / 365) as age  
+	from employee order by age desc
